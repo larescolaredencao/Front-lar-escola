@@ -1,0 +1,117 @@
+<section class="social-links-manager">
+
+  <app-tabela-layout
+    [colunas]="colunas"
+    [dados]="socialLinks"
+    [acoes]="acoesTabela"
+    [carregando]="isLoadingLista"
+    [erro]="loadError"
+    mensagemErro="Não foi possivel carregar as redes sociais."
+    [ordenacao]="ordenacao"
+    mensagemVazia="Nenhuma rede social cadastrada."
+    (acao)="executarAcao($event)"
+    (ordenar)="ordenarPor($event)"
+    (tentarNovamente)="carregarRedesSociais()"
+  />
+
+  <app-paginacao
+    [paginaAtual]="pagina"
+    [totalPaginas]="totalPaginas"
+    [totalElementos]="totalElementos"
+    [tamanho]="tamanho"
+    [carregando]="isLoadingLista"
+    (paginaChange)="irParaPagina($event)"
+    (tamanhoChange)="mudarTamanhoPagina($event)"
+  />
+</section>
+
+@if (modalAberto) {
+<app-modal-layout
+  [titulo]="modoEdicao ? 'Editar rede social' : 'Nova rede social'"
+  [class.tremer-modal]="modalTremendo"
+  (closed)="fecharModal()"
+>
+  @if (modoEdicao && socialLinkSelecionadoId) {
+    <app-historico-contextual modal-title-extra tipo="REDES_SOCIAIS" [idRegistro]="socialLinkSelecionadoId"
+      titulo="Histórico deste registro" />
+  }
+  <form class="form-modal" [formGroup]="form" (ngSubmit)="salvarRedeSocial()">
+
+    @if (modoEdicao) {
+    <div class="campo-status toggle-wrapper">
+      <span class="status-label">
+        {{ form.get('ativo')?.value ? 'Ativo' : 'Inativo' }}
+      </span>
+
+      <label class="custom-switch">
+        <input type="checkbox" formControlName="ativo" />
+        <span class="slider"></span>
+      </label>
+    </div>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nome da rede social</mat-label>
+      <input
+        matInput
+        formControlName="nome"
+        maxlength="50"
+        (blur)="verificarErros()"
+      />
+    </mat-form-field>
+
+    @if (erros['nome']) {
+    <span class="error-text">
+      {{ erros['nome'] }}
+    </span>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Link da rede social</mat-label>
+      <input
+        matInput
+        type="url"
+        formControlName="url"
+        maxlength="255"
+        placeholder="https://..."
+        (blur)="verificarErros()"
+      />
+    </mat-form-field>
+
+    @if (erros['url']) {
+    <span class="error-text">
+      {{ erros['url'] }}
+    </span>
+    }
+
+    <div class="acoes-modal form-acoes">
+
+      <button
+        type="button"
+        class="btn-cancelar"
+        [disabled]="isSalvando"
+        (click)="fecharModal()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isSalvando || (modoEdicao && !temAlteracoes)"
+      >
+        <span
+          *ngIf="isSalvando"
+          class="spinner"
+          aria-hidden="true"
+        ></span>
+
+        <span>
+          {{ isSalvando ? 'Salvando...' : 'Salvar' }}
+        </span>
+      </button>
+
+    </div>
+  </form>
+</app-modal-layout>
+}

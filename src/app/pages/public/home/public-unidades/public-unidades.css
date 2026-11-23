@@ -1,0 +1,158 @@
+.public-unidades-section {
+  padding: 80px 24px;
+  background-color: var(--branco);
+}
+
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.unidades-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.unidades-header h2 {
+  margin: 0 0 18px;
+  color: var(--preto);
+  font-family: var(--fonte-titulo);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.unidades-descricao {
+  max-width: 960px;
+  margin: 0 auto;
+  color: var(--preto);
+  font-family: var(--fonte-texto);
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.unidades-carrossel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.unidades-janela {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 42px 0 4px;
+}
+
+.unidades-trilho {
+  display: flex;
+  align-items: stretch;
+  transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.unidades-trilho.sem-transicao {
+  transition: none;
+}
+
+.card-unidade {
+  flex: 0 0 calc(100% / 3);
+  min-width: calc(100% / 3);
+  padding: 0 28px;
+  box-sizing: border-box;
+  display: flex;
+}
+
+.unidades-seta {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #d0d0d0;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 0.2s ease;
+}
+
+.unidades-seta:hover,
+.unidades-seta:focus-visible {
+  color: var(--primary-color);
+  outline: none;
+}
+
+.unidades-seta .material-symbols-outlined {
+  font-size: 34px;
+  font-weight: 300;
+}
+
+.unidades-seta-anterior {
+  left: -60px;
+}
+
+.unidades-seta-proxima {
+  right: -60px;
+}
+
+@media (max-width: 1160px) {
+  .unidades-seta-anterior {
+    left: -22px;
+  }
+
+  .unidades-seta-proxima {
+    right: -22px;
+  }
+}
+
+@media (max-width: 900px) {
+  .unidades-header {
+    margin-bottom: 40px;
+  }
+
+  .card-unidade {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .public-unidades-section {
+    padding: 48px 16px;
+  }
+
+  .unidades-header h2 {
+    font-size: 1.75rem;
+  }
+
+  .unidades-descricao {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .unidades-carrossel {
+    gap: 0;
+  }
+
+.unidades-janela {
+    padding: 38px 0 4px;
+  }
+
+  .card-unidade {
+    padding: 0 18px;
+  }
+
+
+
+  .unidades-seta-anterior {
+    left: -12px;
+  }
+
+  .unidades-seta-proxima {
+    right: -12px;
+  }
+}

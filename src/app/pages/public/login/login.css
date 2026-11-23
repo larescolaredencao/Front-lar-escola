@@ -1,0 +1,223 @@
+:host {
+  --accent: #3f6fea;
+  --accent-dark: #2f56c2;
+  --ink: #1f2430;
+  --muted: #6b7280;
+  --border: #d9dde3;
+
+  display: block;
+  min-height: 100dvh;
+  font-family:
+    'Inter',  sans-serif;
+  color: var(--ink);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  height: 76px;
+  padding-inline: 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.illustration {
+  background-color: var(--primary-color);
+  position: relative;
+  overflow: hidden;
+  }
+
+.illustration::before {
+  content: "";
+  position: absolute;
+  
+  /* Usa a altura da tela (Viewport Height) como base de tamanho */
+  height: 85vh; /* Ajuste para deixar maior ou menor */
+  aspect-ratio: 1 / 1;
+  
+  background: url('/images/branco_vetorizado.svg') center / contain no-repeat;
+  
+  /* Ancora pelo fundo para a imagem não subir em monitores muito altos */
+  left: -5vw; 
+  bottom: -10vh; 
+  
+  /* Apenas a rotação é necessária agora, sem translateY */
+  transform: rotate(30deg);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.form-card {
+  width: 100%;
+  max-width: 380px;
+}
+
+.form-card h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  font-family: var(--fonte-titulo);
+  text-align: center;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  position: relative;
+}
+
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 2.75rem 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--ink);
+  outline-offset: 2px;
+}
+
+.field input::placeholder {
+  color: #9ca3af;
+}
+
+.field input:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.field-icon {
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  translate: 0 -50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  line-height: 1;
+}
+
+span.field-icon {
+  color: #9ca3af;
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.btn-icone-senha {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.btn-icone-senha .material-symbols-outlined {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.btn-icone-senha:hover,
+.btn-icone-senha:focus-visible {
+  color: var(--ink);
+}
+
+.btn-icone-senha:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+form{
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.link-button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.hint {
+  margin: -1rem 0 1.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.footer-note {
+  margin-top: 1.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .illustration {
+    display: none;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+
+  .topbar {
+    gap: 1rem;
+    padding-inline: 1.25rem;
+  }
+}
+
+.link-button{
+  text-decoration: none;
+}

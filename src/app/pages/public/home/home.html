@@ -1,0 +1,21 @@
+<app-public-navbar></app-public-navbar>
+
+<main class="home-main">
+  <section id="inicio" class="home-section">
+    <p>Seção Início</p>
+  </section>
+
+  <section id="unidades" class="home-section">
+    <app-public-unidades (carregado)="aoCarregarSecao('unidades')"></app-public-unidades>
+  </section>
+
+  <section id="eventos" class="home-section">
+    <app-public-eventos (carregado)="aoCarregarSecao('eventos')"></app-public-eventos>
+  </section>
+
+  <section id="parceiros" class="home-section">
+    <app-public-parceiros></app-public-parceiros>
+  </section>
+</main>
+
+<app-public-footer></app-public-footer>

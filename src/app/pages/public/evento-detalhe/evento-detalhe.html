@@ -1,0 +1,176 @@
+@if (!modoPreview) {
+  <app-public-navbar></app-public-navbar>
+}
+
+<main class="evento-detalhe-page" [class.preview]="modoPreview">
+  @if (!carregando && !modoPreview) {
+  <button type="button" class="link-voltar" (click)="voltar()">
+    <span class="material-symbols-outlined">arrow_back</span>
+    Voltar
+  </button>
+  }
+
+  @if (carregando) {
+    <p class="mensagem-estado">Carregando evento...</p>
+  } @else if (naoEncontrado || !evento) {
+    <p class="mensagem-estado">Evento não encontrado.</p>
+  } @else {
+    <div class="evento-conteudo">
+      <div class="evento-galeria">
+        <div class="imagem-principal-wrapper" (click)="abrirLightbox()">
+          @if (imagemPrincipalIndisponivel) {
+            <span class="imagem-principal-fallback">
+              <span class="material-symbols-outlined" aria-hidden="true">image</span>
+              <span>Imagem indisponível</span>
+            </span>
+          } @else if (imagemPrincipal) {
+            <img
+              class="imagem-principal"
+              [src]="imagemPrincipal"
+              [alt]="evento.titulo"
+              (error)="onImagemPrincipalError()"
+            />
+            <span class="imagem-principal-hint material-symbols-outlined" aria-hidden="true">zoom_in</span>
+          } @else {
+            <span class="imagem-principal-placeholder material-symbols-outlined" aria-hidden="true">image</span>
+          }
+
+          @if (exibirOverlayRedesSociais) {
+            <div class="imagem-overlay">
+              <p class="imagem-overlay-texto">Acompanhe o que aconteceu através das nossas redes sociais</p>
+
+              <nav class="redes-sociais-overlay" aria-label="Redes sociais do evento">
+                @for (rede of redesSociais; track rede.idRedeSocial) {
+                  <a
+                    class="rede-social-link"
+                    [href]="rede.urlLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="$event.stopPropagation()"
+                    [attr.aria-label]="rede.nome"
+                    [title]="rede.nome"
+                  >
+                    <img [src]="rede.icone" [alt]="rede.nome" (error)="onIconeRedeError($event)" />
+                    <span class="material-symbols-outlined rede-social-fallback rede-social-fallback-hidden" aria-hidden="true">
+                      link
+                    </span>
+                  </a>
+                }
+              </nav>
+            </div>
+          } @else if (exibirOverlayEventoEncerrado) {
+            <div class="imagem-overlay imagem-overlay-encerrado">
+              <p class="imagem-overlay-texto">Evento encerrado</p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="evento-info">
+        <div class="evento-titulo-linha">
+          <h1 class="evento-titulo">{{ evento.titulo }}</h1>
+          @if (eventoEncerrado()) {
+            <span class="badge-encerrado">Encerrado</span>
+          }
+        </div>
+
+        <p class="evento-descricao">{{ evento.descricao }}</p>
+
+        <div class="evento-badges">
+          <span class="badge-valor" [class.gratuito]="!evento.valor">{{ formatarValor() }}</span>
+          <span class="badge-tipo">{{ formatarTipo(evento.tipoEvento) }}</span>
+        </div>
+
+        <p class="evento-meta">
+          <span class="material-symbols-outlined">calendar_clock</span>
+          {{ formatarData(evento.dataEvento) }}
+        </p>
+
+        <p class="evento-meta">
+          <span class="material-symbols-outlined">location_on</span>
+          {{ evento.endereco }}
+        </p>
+
+        @if (parceiros.length > 0) {
+          <section class="evento-parceiros">
+            <h2>{{ parceiros.length === 1 ? 'Parceiro' : 'Parceiros' }}</h2>
+
+            <div class="evento-parceiros-carrossel" [class.sem-scroll]="!possuiCarrosselParceiros">
+              @if (possuiCarrosselParceiros) {
+                <button
+                  type="button"
+                  class="evento-parceiros-seta evento-parceiros-seta-anterior"
+                  (click)="parceiroAnterior()"
+                  [disabled]="parceirosAnimando"
+                  aria-label="Parceiros anteriores"
+                >
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+              }
+
+              <div #parceirosJanela class="evento-parceiros-janela">
+                <div
+                  class="evento-parceiros-trilho"
+                  [class.sem-transicao]="!parceirosEmTransicao"
+                  [style.transform]="parceiroTrackTransform"
+                >
+                  @for (parceiro of parceirosCarousel; track parceiro.id + '-' + $index) {
+                    <div
+                      class="evento-parceiro-card"
+                      [style.flex-basis.%]="possuiCarrosselParceiros ? 100 / parceirosPorPagina : null"
+                      [style.min-width.%]="possuiCarrosselParceiros ? 100 / parceirosPorPagina : null"
+                    >
+                      <div class="evento-parceiro-logo">
+                        <img
+                          *ngIf="obterUrlImagem(parceiro.logo)"
+                          [src]="obterUrlImagem(parceiro.logo)"
+                          [alt]="parceiro.nome"
+                          loading="lazy"
+                          (error)="onParceiroImageError($event)"
+                        />
+                        <span
+                          class="material-symbols-outlined imagem-fallback"
+                          [class.imagem-fallback-hidden]="obterUrlImagem(parceiro.logo)"
+                          aria-hidden="true"
+                        >
+                          volunteer_activism
+                        </span>
+                      </div>
+                      <span class="evento-parceiro-nome">{{ parceiro.nome }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              @if (possuiCarrosselParceiros) {
+                <button
+                  type="button"
+                  class="evento-parceiros-seta"
+                  (click)="proximoParceiro()"
+                  [disabled]="parceirosAnimando"
+                  aria-label="Proximos parceiros"
+                >
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  }
+</main>
+
+@if (lightboxAberto && imagemPrincipal && evento) {
+  <div class="lightbox" (click)="fecharLightbox()">
+    <button type="button" class="lightbox-fechar" (click)="fecharLightbox()" aria-label="Fechar imagem ampliada">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <img class="lightbox-imagem" [src]="imagemPrincipal" [alt]="evento.titulo" (click)="$event.stopPropagation()" />
+  </div>
+}
+
+@if (!modoPreview) {
+  <app-public-footer></app-public-footer>
+}

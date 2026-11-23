@@ -1,0 +1,57 @@
+<section class="public-unidades-section" *ngIf="!carregando">
+  <div class="container">
+    <div class="unidades-header">
+      <h2>Unidades de Atendimento</h2>
+      <p class="unidades-descricao">
+        Atualmente, a instituição conta com {{ unidades.length }} unidades de atendimento. Nossos polos oferecem
+        um ambiente seguro e estruturado no contraturno escolar, focado no acolhimento de meninos. Os espaços são
+        dedicados à realização de diversas atividades, que vão desde oficinas educacionais até projetos esportivos
+        e culturais.
+      </p>
+    </div>
+
+    <div class="unidades-carrossel" *ngIf="unidades.length > 0; else semUnidades">
+      <button
+        type="button"
+        class="unidades-seta unidades-seta-anterior"
+        (click)="unidadeAnterior()"
+        aria-label="Unidades anteriores"
+      >
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+
+      <div class="unidades-janela">
+        <div
+          class="unidades-trilho"
+          [class.sem-transicao]="!emTransicao"
+          [style.transform]="trilhoTransform"
+        >
+          <article
+            class="card-unidade"
+            *ngFor="let unidade of unidadesCarousel; let i = index"
+            [style.flex-basis.%]="100 / unidadesPorPagina"
+            [style.min-width.%]="100 / unidadesPorPagina"
+          >
+            <app-unidade-card
+              [unidade]="unidade"
+              [numero]="(i % unidades.length) + 1"
+              [imagemUrl]="obterUrlImagem(unidade.imagem)" />
+          </article>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="unidades-seta unidades-seta-proxima"
+        (click)="proximaUnidade()"
+        aria-label="Próximas unidades"
+      >
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+
+    <ng-template #semUnidades>
+      <app-estado-vazio icone="apartment" mensagem="Nenhuma unidade disponível no momento." />
+    </ng-template>
+  </div>
+</section>

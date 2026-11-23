@@ -1,0 +1,58 @@
+<section class="public-eventos-section" *ngIf="!carregando">
+  <div class="container">
+    <div class="eventos-header">
+      <h2>Próximos eventos</h2>
+    </div>
+
+    <div class="grade-eventos" *ngIf="eventosDestaque.length > 0; else semEventos">
+      <a
+        class="card-evento"
+        *ngFor="let evento of eventosDestaque"
+        [routerLink]="['/eventos', evento.id]"
+        [queryParams]="{ returnUrl: '/#eventos' }"
+        [attr.aria-label]="'Ver detalhes do evento ' + evento.titulo"
+      >
+        <ng-container *ngIf="obterUrlImagem(evento.imagem) && !eventoImagemIndisponivel(evento.id); else imagemIndisponivel">
+          <img
+            class="card-imagem"
+            [src]="obterUrlImagem(evento.imagem)"
+            [alt]="evento.titulo"
+            loading="lazy"
+            (error)="onEventoImageError(evento.id)"
+          />
+        </ng-container>
+        <ng-template #imagemIndisponivel>
+          <span class="card-imagem-fallback material-symbols-outlined" aria-hidden="true">image</span>
+        </ng-template>
+        <div class="card-overlay">
+          <div class="card-topo">
+            <div class="card-data">
+              <span class="dia">{{ formatarDia(evento.dataEvento) }}</span>
+              <span class="mes">{{ formatarMes(evento.dataEvento) }}</span>
+              <span class="ano">{{ formatarAno(evento.dataEvento) }}</span>
+            </div>
+            <div class="card-hora">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ formatarHora(evento.dataEvento) }}
+            </div>
+          </div>
+
+          <div class="card-rodape">
+            <h3 class="card-titulo">{{ evento.titulo }}</h3>
+            <p class="card-descricao">{{ evento.descricao }}</p>
+            <span class="card-valor" [class.gratuito]="!evento.valor">{{ formatarValor(evento) }}</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <ng-template #semEventos>
+      <app-estado-vazio icone="event" mensagem="Nenhum evento programado no momento." />
+    </ng-template>
+
+    <a class="link-todos-eventos" routerLink="/eventos">
+      Confira todos os eventos
+      <span class="material-symbols-outlined">arrow_forward</span>
+    </a>
+  </div>
+</section>

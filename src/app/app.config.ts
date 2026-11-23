@@ -1,0 +1,30 @@
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideToastr, ToastrService } from 'ngx-toastr';
+import { ToastrHistoricoService } from './shared/services/historico/toastr-historico.service';
+
+import { routes } from './app.routes';
+import { authInterceptor } from './shared/interceptors/auth-interceptor';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideBrowserGlobalErrorListeners(),
+    provideRouter(
+      routes,
+      withInMemoryScrolling({
+        anchorScrolling: 'enabled',
+        scrollPositionRestoration: 'enabled'
+      })
+    ),
+
+    provideHttpClient(
+      withInterceptors([authInterceptor])
+    ),
+
+    provideAnimations(),
+    provideToastr({ closeButton: true }),
+    { provide: ToastrService, useClass: ToastrHistoricoService }
+  ]
+};

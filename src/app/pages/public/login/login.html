@@ -1,0 +1,74 @@
+<app-public-navbar></app-public-navbar>
+
+<div class="layout">
+  <div class="illustration" aria-hidden="true"></div>
+
+  <main class="form-panel">
+    <div class="form-card">
+      <h1>Acesso Interno</h1>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <input
+            id="identifier"
+            type="text"
+            formControlName="identifier"
+            placeholder="E-mail ou CPF"
+            autocomplete="username"
+            (input)="onIdentifierInput($event)"
+          />
+          <span class="material-symbols-outlined field-icon" aria-hidden="true">badge</span>
+        </div>
+        @if (form.controls.identifier.invalid && form.controls.identifier.touched) {
+          <p class="error-text">Informe um e-mail ou CPF válido.</p>
+        }
+
+        <div class="field">
+          <input
+            id="password"
+            [type]="mostrarSenha() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Senha"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="field-icon btn-icone-senha"
+            tabindex="-1"
+            (click)="alternarVisibilidadeSenha()"
+            [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">
+              {{ mostrarSenha() ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <p class="error-text">Informe sua senha.</p>
+        }
+
+        <div class="row">
+          <label class="remember">
+            <input type="checkbox" formControlName="remember" />
+            Lembre de mim
+          </label>
+
+          <a routerLink="/recuperar-senha" class="link-button">Esqueci a senha</a>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="loading()">
+          {{ loading() ? 'Entrando...' : 'Entrar' }}
+        </button>
+                @if (errorMessage()) {
+          <p class="error-text" role="alert">{{ errorMessage() }}</p>
+        }
+      </form>
+
+      <p class="footer-note">
+        Este espaço é dedicado à equipe interna do Lar Escola Redenção. Se você precisa de acesso
+        ao sistema, entre em contato com a diretoria da organização.
+      </p>
+    </div>
+  </main>
+</div>
+<app-public-footer></app-public-footer>

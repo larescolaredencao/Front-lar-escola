@@ -1,0 +1,413 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { ActivatedRoute, ParamMap, Router, convertToParamMap } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+import { Alertas } from 'src/app/shared/utils/alerts';
+import { By } from '@angular/platform-browser';
+import { HistoricoContextual } from '@components/historico-contextual/historico-contextual';
+import { Auth } from 'src/app/shared/services/auth/auth';
+import { HistoricoService } from 'src/app/shared/services/historico/historico.service';
+
+import { UnidadesTurmas } from './unidades-turmas';
+import { UnidadeService } from 'src/app/shared/services/unidade/unidade.service';
+import { TurmaService } from 'src/app/shared/services/turma/turma.service';
+import { Unidade } from 'src/app/shared/models/unidade.model';
+import { Turma } from 'src/app/shared/models/turma.model';
+
+describe('UnidadesTurmas', () => {
+  let component: UnidadesTurmas;
+  let fixture: ComponentFixture<UnidadesTurmas>;
+
+  let unidadeService: {
+    listarTodas: ReturnType<typeof vi.fn>;
+    listarPaginado: ReturnType<typeof vi.fn>;
+    buscarPorId: ReturnType<typeof vi.fn>;
+    criar: ReturnType<typeof vi.fn>;
+    atualizar: ReturnType<typeof vi.fn>;
+    deletar: ReturnType<typeof vi.fn>;
+  };
+
+  let turmaService: {
+    listar: ReturnType<typeof vi.fn>;
+    listarPaginado: ReturnType<typeof vi.fn>;
+    buscarPorId: ReturnType<typeof vi.fn>;
+    criar: ReturnType<typeof vi.fn>;
+    atualizar: ReturnType<typeof vi.fn>;
+    deletar: ReturnType<typeof vi.fn>;
+  };
+
+  let toastr: {
+    warning: ReturnType<typeof vi.fn>;
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    info: ReturnType<typeof vi.fn>;
+  };
+
+  // Fake mínima de ActivatedRoute/Router: `navigate` funde os queryParams (removendo
+  // chaves com valor null, igual ao `queryParamsHandling: 'merge'` real) e reemite no
+  // BehaviorSubject, para exercitar o mesmo fluxo que o componente usa em produção.
+  let currentParams: Record<string, string>;
+  let paramMapSubject: BehaviorSubject<ParamMap>;
+  let router: { navigate: ReturnType<typeof vi.fn> };
+
+  function configurarRoteamentoFake(): void {
+    currentParams = {};
+    paramMapSubject = new BehaviorSubject<ParamMap>(convertToParamMap(currentParams));
+
+    router = {
+      navigate: vi.fn((_comandos: unknown[], extras?: { queryParams?: Record<string, unknown> }) => {
+        const queryParams = extras?.queryParams ?? {};
+        for (const [chave, valor] of Object.entries(queryParams)) {
+          if (valor === null || valor === undefined) {
+            delete currentParams[chave];
+          } else {
+            currentParams[chave] = String(valor);
+          }
+        }
+        paramMapSubject.next(convertToParamMap({ ...currentParams }));
+        return Promise.resolve(true);
+      }),
+    };
+  }
+
+  const unidades: Unidade[] = [
+    {
+      id: 1,
+      nome: 'Sede',
+      endereco: 'Rua A',
+      telefone: '(11) 1111-1111',
+      email: 'sede@ler.org',
+      diasFuncionamento: 'SEG;TER;QUA;QUI;SEX',
+      horarioAbertura: '08:00',
+      horarioFechamento: '18:00',
+      idadeMin: 6,
+      idadeMax: 12,
+      corHex: '#F5F5F5',
+    },
+  ];
+
+  const turma: Turma = {
+    id: 1,
+    periodo: 'MANHA',
+    horaInicio: '08:00',
+    horaFim: '12:00',
+    unidade: { id: 1, nome: 'Sede' },
+  };
+
+  function configurarTestBed(): void {
+    unidadeService = {
+      listarTodas: vi.fn().mockReturnValue(of(unidades)),
+      listarPaginado: vi.fn().mockReturnValue(
+        of({ content: unidades, page: { size: 10, number: 0, totalElements: unidades.length, totalPages: 1 } }),
+      ),
+      buscarPorId: vi.fn(),
+      criar: vi.fn(),
+      atualizar: vi.fn(),
+      deletar: vi.fn(),
+    };
+
+    turmaService = {
+      listar: vi.fn().mockReturnValue(of([turma])),
+      listarPaginado: vi.fn().mockReturnValue(
+        of({ content: [turma], page: { size: 10, number: 0, totalElements: 1, totalPages: 1 } }),
+      ),
+      buscarPorId: vi.fn(),
+      criar: vi.fn(),
+      atualizar: vi.fn(),
+      deletar: vi.fn(),
+    };
+
+    toastr = {
+      warning: vi.fn(),
+      success: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+    };
+  }
+
+  beforeEach(async () => {
+    configurarTestBed();
+    configurarRoteamentoFake();
+
+    await TestBed.configureTestingModule({
+      imports: [UnidadesTurmas],
+      providers: [
+        provideAnimations(),
+        { provide: Auth, useValue: { podeAcessar: () => true } },
+        { provide: HistoricoService, useValue: {
+          atualizacoes: of(undefined),
+          consultarLeitura: vi.fn().mockReturnValue(of({ ultimoEvento: 1, ultimoLido: 1, temNovidades: false }))
+        } },
+        { provide: UnidadeService, useValue: unidadeService },
+        { provide: TurmaService, useValue: turmaService },
+        { provide: ToastrService, useValue: toastr },
+        { provide: ActivatedRoute, useValue: { queryParamMap: paramMapSubject.asObservable() } },
+        { provide: Router, useValue: router },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(UnidadesTurmas);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it.each(['unidade', 'turma'] as const)('mostra o motivo da API quando a exclusão de %s é impedida', async tipo => {
+    vi.spyOn(Alertas, 'confirmarExclusao').mockResolvedValue(true);
+    const mensagem = `Não é possível excluir esta ${tipo}: existem matrículas vinculadas, inclusive de usuários transferidos ou desligados.`;
+    const api = tipo === 'unidade' ? unidadeService : turmaService;
+    api.deletar.mockReturnValue(throwError(() => ({ status: 409, error: { message: mensagem } })));
+    if (tipo === 'unidade') component.deletarUnidade(unidades[0]);
+    else component.deletarTurma(turma);
+    await Promise.resolve();
+    expect(toastr.warning).toHaveBeenCalledWith(mensagem, 'Exclusão não permitida');
+    expect(toastr.error).not.toHaveBeenCalled();
+    expect(component.isLoading).toBe(false); expect(component.isLoadingTurma).toBe(false);
+  });
+
+  it('mantém mensagem de falha quando o erro não é de vínculo', async () => {
+    vi.spyOn(Alertas, 'confirmarExclusao').mockResolvedValue(true);
+    turmaService.deletar.mockReturnValue(throwError(() => ({ status: 503 })));
+    component.deletarTurma(turma); await Promise.resolve();
+    expect(toastr.error).toHaveBeenCalledWith('Não foi possível excluir a turma. Tente novamente.', 'Erro');
+    expect(toastr.warning).not.toHaveBeenCalled();
+  });
+
+  it('preserva o card público e o histórico apenas da unidade selecionada', async () => {
+    component.abrirVisualizacao(unidades[0]);
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const modal = fixture.nativeElement.querySelector('app-modal-layout');
+    expect(modal.querySelectorAll('app-unidade-card')).toHaveLength(1);
+    expect(modal.querySelector('.card-titulo')?.textContent).toContain('Sede');
+    expect(modal.querySelector('.card-corpo')?.textContent).toContain('08h às 18h de Segunda a Sexta');
+    expect(modal.querySelector('.card-corpo')?.textContent).toContain('Meninos de 6 a 12 anos');
+    expect(modal.querySelector('.detalhes-campos')).toBeNull();
+    const historicos = fixture.debugElement.queryAll(By.directive(HistoricoContextual));
+    expect(historicos).toHaveLength(1);
+    expect(historicos[0].componentInstance.tipo).toBe('UNIDADES');
+    expect(historicos[0].componentInstance.idRegistro).toBe(1);
+    expect(modal.querySelector('.modal-title-area app-historico-contextual')).not.toBeNull();
+    component.fecharVisualizacao();
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-modal-layout')).toBeNull();
+  });
+
+  it('abre os detalhes da turma selecionada com histórico restrito ao seu ID', async () => {
+    expect(component.acoesTabelaTurmas.some(acao => acao.acao === 'visualizar')).toBe(true);
+    component.executarAcaoTurma({ tipo: 'visualizar', linha: { ...turma, id: 7 } });
+    fixture.changeDetectorRef.markForCheck();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector('app-modal-layout');
+    expect(modal.querySelector('.detalhes-campos').textContent).toContain('Manhã');
+    expect(modal.querySelector('.detalhes-campos').textContent).toContain('Sede');
+    const historicos = fixture.debugElement.queryAll(By.directive(HistoricoContextual));
+    expect(historicos).toHaveLength(1);
+    expect(historicos[0].componentInstance.tipo).toBe('TURMAS');
+    expect(historicos[0].componentInstance.idRegistro).toBe(7);
+    modal.querySelector('.modal-close').click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-modal-layout')).toBeNull();
+  });
+
+  it('não oferece histórico geral junto ao título da página', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.cabecalho-unidades app-historico-contextual')).toBeNull();
+  });
+
+  it('carrega a lista de turmas ao iniciar (aba padrão)', () => {
+    expect(turmaService.listarPaginado).toHaveBeenCalledWith(0, 10, null, undefined);
+    expect(component.turmas).toEqual([turma]);
+  });
+
+  it('carrega a tabela de unidades ao trocar para a aba unidades', () => {
+    component.mudarAba('unidades');
+
+    expect(unidadeService.listarPaginado).toHaveBeenCalledWith(0, 10, undefined, undefined);
+    expect(component.unidadesTabela).toEqual(unidades);
+  });
+
+  it('refaz o listarPaginado com o unidadeId ao trocar o filtro de unidade', () => {
+    component.unidadeFiltroId = 1;
+    component.onFiltroUnidadeChange();
+
+    expect(component.unidadeFiltroId).toBe(1);
+    expect(turmaService.listarPaginado).toHaveBeenLastCalledWith(0, 10, 1, undefined);
+  });
+
+  it('envia o termo da barra de busca como search e volta para a primeira página', () => {
+    component.irParaPagina(2);
+    component.buscar('manha');
+
+    expect(currentParams['search']).toBe('manha');
+    expect(currentParams['page']).toBe('0');
+    expect(turmaService.listarPaginado).toHaveBeenLastCalledWith(0, 10, null, 'manha');
+
+    component.buscar('');
+
+    expect(currentParams['search']).toBeUndefined();
+    expect(turmaService.listarPaginado).toHaveBeenLastCalledWith(0, 10, null, undefined);
+  });
+
+  it('limpa a busca ao trocar de aba', () => {
+    component.buscar('centro');
+    component.mudarAba('unidades');
+
+    expect(component.busca).toBe('');
+    expect(unidadeService.listarPaginado).toHaveBeenLastCalledWith(0, 10, undefined, undefined);
+  });
+
+  it('volta a listar sem unidadeId ao selecionar "Todas as unidades"', () => {
+    component.unidadeFiltroId = 1;
+    component.onFiltroUnidadeChange();
+    component.unidadeFiltroId = null;
+    component.onFiltroUnidadeChange();
+
+    expect(component.unidadeFiltroId).toBeNull();
+    expect(turmaService.listarPaginado).toHaveBeenLastCalledWith(0, 10, null, undefined);
+  });
+
+  it('carrega as unidades e desmarca o estado de carregamento', () => {
+    expect(unidadeService.listarTodas).toHaveBeenCalled();
+    expect(component.unidades).toEqual(unidades);
+    expect(component.carregandoUnidades).toBe(false);
+    expect(component.erroCarregarUnidades).toBe(false);
+  });
+
+  it('sinaliza erro no select de unidades quando o carregamento falha', () => {
+    unidadeService.listarTodas.mockReturnValue(throwError(() => new Error('falha de rede')));
+
+    component.carregarUnidades();
+
+    expect(component.carregandoUnidades).toBe(false);
+    expect(component.erroCarregarUnidades).toBe(true);
+    expect(toastr.error).toHaveBeenCalledWith(
+      'Não foi possível carregar a lista de unidades.',
+      'Erro',
+    );
+  });
+
+  it('exige a seleção de uma unidade para o formulário ser válido', () => {
+    component.abrirCadastroTurma();
+
+    component.formTurma.patchValue({
+      periodo: 'MANHA',
+      horaInicio: '08:00',
+      horaFim: '12:00',
+      unidadeId: null,
+    });
+
+    expect(component.formTurma.invalid).toBe(true);
+    expect(component.formTurma.get('unidadeId')?.hasError('required')).toBe(true);
+  });
+
+  it('marca horaFim como inválido quando não é maior que horaInicio', () => {
+    component.abrirCadastroTurma();
+
+    component.formTurma.patchValue({
+      periodo: 'MANHA',
+      horaInicio: '10:00',
+      horaFim: '09:00',
+      unidadeId: 1,
+    });
+
+    expect(component.formTurma.get('horaFim')?.hasError('horarioInvalido')).toBe(true);
+    expect(component.formTurma.invalid).toBe(true);
+  });
+
+  it('limpa o erro de horário quando horaFim passa a ser maior que horaInicio', () => {
+    component.abrirCadastroTurma();
+
+    component.formTurma.patchValue({
+      periodo: 'MANHA',
+      horaInicio: '10:00',
+      horaFim: '09:00',
+      unidadeId: 1,
+    });
+    expect(component.formTurma.get('horaFim')?.hasError('horarioInvalido')).toBe(true);
+
+    component.formTurma.patchValue({ horaFim: '11:00' });
+    expect(component.formTurma.get('horaFim')?.hasError('horarioInvalido')).toBe(false);
+  });
+
+  it('não sinaliza conflito para uma turma de mesmo período/horário de outra unidade', () => {
+    // turmaService.listar ignora o unidadeId (assim como a API real) e sempre
+    // devolve a turma da unidade 1; a checagem de conflito precisa filtrar
+    // pelo lado do front antes de comparar período/horário.
+    component.abrirCadastroTurma();
+
+    component.formTurma.setValue({
+      periodo: 'MANHA',
+      horaInicio: '08:00',
+      horaFim: '12:00',
+      unidadeId: 2,
+    });
+
+    expect(component.formTurma.get('periodo')?.hasError('periodoConflito')).toBe(false);
+    expect(component.formTurma.get('horaFim')?.hasError('horarioConflito')).toBe(false);
+    expect(component.formTurma.valid).toBe(true);
+  });
+
+  it('pré-seleciona a unidade da turma na edição, convertendo o id para número', () => {
+    component.abrirEdicaoTurma({
+      ...turma,
+      unidade: { id: '1' as unknown as number, nome: 'Sede' },
+    });
+
+    expect(component.formTurma.value.unidadeId).toBe(1);
+  });
+
+  it('envia o payload com o unidadeId correto ao criar uma turma', () => {
+    turmaService.criar.mockReturnValue(of(turma));
+
+    component.abrirCadastroTurma();
+    component.formTurma.setValue({
+      periodo: 'TARDE',
+      horaInicio: '13:00',
+      horaFim: '17:00',
+      unidadeId: 1,
+    });
+
+    component.salvarTurma();
+
+    expect(turmaService.criar).toHaveBeenCalledWith({
+      periodo: 'TARDE',
+      horaInicio: '13:00',
+      horaFim: '17:00',
+      unidadeId: 1,
+    });
+    expect(toastr.success).toHaveBeenCalledWith('Turma cadastrada com sucesso.', 'Sucesso');
+  });
+
+  it('bloqueia o salvamento quando não há unidades cadastradas', () => {
+    unidadeService.listarTodas.mockReturnValue(of([]));
+    component.carregarUnidades();
+
+    component.abrirCadastroTurma();
+    component.formTurma.setValue({
+      periodo: 'TARDE',
+      horaInicio: '13:00',
+      horaFim: '17:00',
+      unidadeId: 1,
+    });
+
+    component.salvarTurma();
+
+    expect(turmaService.criar).not.toHaveBeenCalled();
+  });
+});

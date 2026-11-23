@@ -1,0 +1,483 @@
+<section class="unidades-admin">
+  <div class="cabecalho-unidades">
+    <h1>Unidades e turmas</h1>
+  </div>
+  <div class="conteudo">
+    <div appAbasResponsivas class="abas-container">
+      <button
+        type="button"
+        class="aba-btn"
+        [class.ativa]="abaAtiva === 'turmas'"
+        (click)="mudarAba('turmas')"
+      >
+        Turmas
+      </button>
+      <button
+        type="button"
+        class="aba-btn"
+        [class.ativa]="abaAtiva === 'unidades'"
+        (click)="mudarAba('unidades')"
+      >
+        Unidades
+      </button>
+    </div>
+
+    @if (abaAtiva === 'unidades') {
+      <div class="acoes-unidades">
+        <app-barra-busca
+          placeholder="Buscar por nome, endereço, telefone, e-mail..."
+          [valor]="busca"
+          (buscar)="buscar($event)" />
+        <button type="button" class="btn-primary btn-primary-thick" (click)="abrirCadastro()">Nova unidade</button>
+      </div>
+
+      <app-tabela-layout
+        [colunas]="colunas"
+        [dados]="unidadesTabela"
+        [acoes]="acoesTabela"
+        [carregando]="carregandoLista"
+        [erro]="erroLista"
+        [mensagemVazia]="mensagemVazia"
+        (acao)="executarAcao($event)"
+        (tentarNovamente)="carregarUnidadesTabela()"
+      />
+    }
+
+    @if (abaAtiva === 'turmas') {
+      <div class="acoes-unidades acoes-turmas">
+        <app-barra-busca
+          placeholder="Buscar por período, horário, unidade..."
+          [valor]="busca"
+          (buscar)="buscar($event)" />
+
+        <mat-form-field appearance="outline" class="filtro-unidade">
+          <mat-label>Turmas da unidade</mat-label>
+          <mat-select
+            [(ngModel)]="unidadeFiltroId"
+            [canSelectNullableOptions]="true"
+            (selectionChange)="onFiltroUnidadeChange()"
+          >
+            <mat-option [value]="null">Todas</mat-option>
+            @for (unidade of unidades; track unidade.id) {
+              <mat-option [value]="unidade.id">
+                {{ unidade.nome }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button type="button" class="btn-primary btn-primary-thick" (click)="abrirCadastroTurma()">Nova turma</button>
+      </div>
+
+      <app-tabela-layout
+        [colunas]="colunasTurmas"
+        [dados]="turmas"
+        [acoes]="acoesTabelaTurmas"
+        [carregando]="carregandoLista"
+        [erro]="erroLista"
+        [mensagemVazia]="mensagemVaziaTurmas"
+        (acao)="executarAcaoTurma($event)"
+        (tentarNovamente)="carregarTurmas()"
+      />
+    }
+
+    <app-paginacao
+      [paginaAtual]="pagina"
+      [totalPaginas]="totalPaginas"
+      [totalElementos]="totalElementos"
+      [tamanho]="tamanho"
+      [carregando]="carregandoLista"
+      (paginaChange)="irParaPagina($event)"
+      (tamanhoChange)="mudarTamanhoPagina($event)"
+    />
+  </div>
+</section>
+
+@if (modalAberto) {
+  <app-modal-layout
+    [class.tremer]="modalTremendo"
+    [titulo]="modoEdicao ? 'Editar unidade' : 'Cadastrar nova unidade'"
+    (closed)="fecharModal()"
+  >
+    @if (modoEdicao && unidadeSelecionadaId) {
+      <app-historico-contextual modal-title-extra tipo="UNIDADES"
+        [idRegistro]="unidadeSelecionadaId" titulo="Histórico desta unidade" />
+    }
+    <form class="form-modal" [formGroup]="formUnidade" (ngSubmit)="salvar()">
+      <mat-form-field appearance="outline">
+        <mat-label>Nome da unidade</mat-label>
+        <input matInput formControlName="nome" (blur)="verificarErros()" maxlength="100" />
+      </mat-form-field>
+      <span class="error-text" *ngIf="erros['nome']">
+        {{ erros['nome'] }}
+      </span>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Endereço</mat-label>
+        <input matInput formControlName="endereco" (blur)="verificarErros()" maxlength="255" />
+      </mat-form-field>
+      <span class="error-text" *ngIf="erros['endereco']">
+        {{ erros['endereco'] }}
+      </span>
+
+    <div class="form-row">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input
+            matInput
+            type="text"
+            inputmode="numeric"
+            formControlName="telefone"
+            (input)="aplicarMascaraTelefone($event)"
+            (blur)="verificarErros()"
+            minlength="14"
+            maxlength="15" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['telefone']">
+          {{ erros['telefone'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            (blur)="verificarErros()"
+            maxlength="100" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['email']">
+          {{ erros['email'] }}
+        </span>
+      </div>
+    </div>
+
+    <div>
+      <div class="dias-funcionamento-campo">
+        <label class="dias-funcionamento-label">Dias de funcionamento</label>
+        <div class="dias-funcionamento">
+          <label *ngFor="let dia of diasSemana">
+            <input
+              type="checkbox"
+              [checked]="diaSelecionado(dia.valor)"
+              (change)="toggleDia(dia.valor, $event)" />
+            {{ dia.label }}
+          </label>
+        </div>
+      </div>
+      <span class="error-text" *ngIf="erros['diasFuncionamento']">
+        {{ erros['diasFuncionamento'] }}
+      </span>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Horário de abertura</mat-label>
+          <input
+            #horarioAbertura
+            matInput
+            type="time"
+            formControlName="horarioAbertura"
+            (blur)="verificarErros()" />
+          <button type="button" matSuffix class="btn-seletor-hora" aria-label="Selecionar horário de abertura"
+            (click)="abrirSeletorHora(horarioAbertura)">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+          </button>
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['horarioAbertura']">
+          {{ erros['horarioAbertura'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Horário de fechamento</mat-label>
+          <input
+            #horarioFechamento
+            matInput
+            type="time"
+            formControlName="horarioFechamento"
+            (blur)="verificarErros()" />
+          <button type="button" matSuffix class="btn-seletor-hora" aria-label="Selecionar horário de fechamento"
+            (click)="abrirSeletorHora(horarioFechamento)">
+            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+          </button>
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['horarioFechamento']">
+          {{ erros['horarioFechamento'] }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Idade mínima</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="idadeMin"
+            (blur)="verificarErros()"
+            min="0"
+            max="100" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['idadeMin']">
+          {{ erros['idadeMin'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Idade máxima</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="idadeMax"
+            (blur)="verificarErros()"
+            min="0"
+            max="100" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['idadeMax']">
+          {{ erros['idadeMax'] }}
+        </span>
+      </div>
+    </div>
+
+    <div class="campo-cor">
+      <label>Cor de identificação</label>
+      <div class="campo-cor-linha">
+        <input type="color" formControlName="corHex" />
+        <span class="cor-hex-valor">{{ formUnidade.value.corHex }}</span>
+      </div>
+    </div>
+
+      <div class="form-group">
+        <input
+          #inputImagem
+          id="imagemUnidade"
+          type="file"
+          class="input-arquivo-oculto"
+          accept=".jpg,.jpeg,.png,.webp"
+          (change)="onImagemSelecionada($event)"
+        />
+
+        <div [appAnexoDrop]="inputImagem"
+          class="upload-arquivo"
+          [class.upload-arquivo-erro]="erros['imagem']"
+          (click)="inputImagem.click()"
+        >
+          <span class="material-symbols-outlined upload-arquivo-icone"> upload_file </span>
+
+          <div class="upload-arquivo-texto">
+            <strong>
+              {{
+                nomeArquivoSelecionado
+                  ? nomeArquivoSelecionado
+                  : 'Selecione uma imagem para a unidade'
+              }}
+            </strong>
+            <span>PNG, JPEG, JPG ou WEBP</span>
+          </div>
+
+          <span class="upload-arquivo-botao"> Procurar </span>
+        </div>
+      </div>
+
+      <span class="error-text" *ngIf="erros['imagem']">{{ erros['imagem'] }}</span>
+
+      @if (imagemPreview) {
+        <div class="image-preview">
+          <img
+            [src]="imagemPreview"
+            [alt]="formUnidade.get('nome')?.value || 'Imagem da unidade'"
+          />
+        </div>
+      }
+
+      <div class="acoes-modal form-acoes">
+        <button type="button" class="btn-cancelar" [disabled]="isLoading" (click)="fecharModal()">
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="isLoading || (modoEdicao && !temAlteracoes)"
+        >
+          <span *ngIf="isLoading" class="spinner" aria-hidden="true"> </span>
+          <span>
+            {{ isLoading ? 'Salvando...' : 'Salvar' }}
+          </span>
+        </button>
+      </div>
+    </form>
+  </app-modal-layout>
+}
+
+@if (modalTurmaAberto) {
+  <app-modal-layout
+    [class.tremer]="modalTurmaTremendo"
+    [titulo]="modoEdicaoTurma ? 'Editar turma' : 'Cadastrar nova turma'"
+    (closed)="fecharModalTurma()"
+  >
+    @if (modoEdicaoTurma && turmaSelecionadaId) {
+      <app-historico-contextual modal-title-extra tipo="TURMAS"
+        [idRegistro]="turmaSelecionadaId" titulo="Histórico desta turma" />
+    }
+    <form class="form-modal" [formGroup]="formTurma" (ngSubmit)="salvarTurma()">
+      <mat-form-field appearance="outline">
+        <mat-label>Período</mat-label>
+        <mat-select
+          formControlName="periodo"
+          [canSelectNullableOptions]="false"
+          (selectionChange)="verificarErrosTurma()"
+          (blur)="verificarErrosTurma()"
+        >
+          @for (periodo of periodos; track periodo.valor) {
+            <mat-option [value]="periodo.valor">{{ periodo.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <span class="error-text" *ngIf="errosTurma['periodo']">
+        {{ errosTurma['periodo'] }}
+      </span>
+
+      <div class="form-row">
+        <div>
+          <mat-form-field appearance="outline">
+            <mat-label>Horário de início</mat-label>
+            <input
+              #horaInicio
+              matInput
+              type="time"
+              formControlName="horaInicio"
+              (blur)="verificarErrosTurma()"
+            />
+            <button type="button" matSuffix class="btn-seletor-hora" aria-label="Selecionar horário de início"
+              (click)="abrirSeletorHora(horaInicio)">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            </button>
+          </mat-form-field>
+          <span class="error-text" *ngIf="errosTurma['horaInicio']">
+            {{ errosTurma['horaInicio'] }}
+          </span>
+        </div>
+
+        <div>
+          <mat-form-field appearance="outline">
+            <mat-label>Horário de término</mat-label>
+            <input #horaFim matInput type="time" formControlName="horaFim" (blur)="verificarErrosTurma()" />
+            <button type="button" matSuffix class="btn-seletor-hora" aria-label="Selecionar horário de término"
+              (click)="abrirSeletorHora(horaFim)">
+              <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+            </button>
+          </mat-form-field>
+          <span class="error-text" *ngIf="errosTurma['horaFim']">
+            {{ errosTurma['horaFim'] }}
+          </span>
+        </div>
+      </div>
+
+      <div class="campo-unidade">
+        <mat-form-field appearance="outline">
+          <mat-label>Unidade</mat-label>
+
+          @if (carregandoUnidades) {
+            <mat-select disabled placeholder="Carregando unidades..."></mat-select>
+          } @else {
+            <mat-select
+              formControlName="unidadeId"
+              [canSelectNullableOptions]="false"
+              (selectionChange)="verificarErrosTurma()"
+              (blur)="verificarErrosTurma()"
+            >
+              @for (unidade of unidades; track unidade.id) {
+                <mat-option [value]="unidade.id">{{ unidade.nome }}</mat-option>
+              }
+            </mat-select>
+          }
+        </mat-form-field>
+
+        @if (carregandoUnidades) {
+          <span class="spinner" aria-hidden="true"></span>
+        }
+      </div>
+
+      @if (erroCarregarUnidades) {
+        <div class="alerta-unidade">
+          <span class="error-text">Não foi possível carregar as unidades.</span>
+          <button type="button" class="btn-cancelar" (click)="carregarUnidades()">
+            Tentar novamente
+          </button>
+        </div>
+      }
+
+      @if (!carregandoUnidades && !erroCarregarUnidades && unidades.length === 0) {
+        <div class="alerta-unidade">
+          <span class="error-text">É preciso cadastrar uma unidade antes de criar uma turma.</span>
+        </div>
+      }
+
+      <span class="error-text" *ngIf="errosTurma['unidadeId']">
+        {{ errosTurma['unidadeId'] }}
+      </span>
+
+      <div class="acoes-modal form-acoes">
+        <button
+          type="button"
+          class="btn-cancelar"
+          [disabled]="isLoadingTurma"
+          (click)="fecharModalTurma()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="
+            isLoadingTurma ||
+            (modoEdicaoTurma && !temAlteracoesTurma)
+          "
+        >
+          <span *ngIf="isLoadingTurma" class="spinner" aria-hidden="true"> </span>
+          <span>
+            {{ isLoadingTurma ? 'Salvando...' : 'Salvar' }}
+          </span>
+        </button>
+      </div>
+    </form>
+  </app-modal-layout>
+}
+
+@if (modalVisualizacaoAberto) {
+  <app-modal-layout titulo="Detalhes da unidade" (closed)="fecharVisualizacao()">
+    @if (unidadeVisualizacao) {
+      <app-historico-contextual modal-title-extra tipo="UNIDADES"
+        [idRegistro]="unidadeVisualizacao.id" titulo="Histórico desta unidade" />
+    }
+    <div class="modal-body-preview" *ngIf="unidadeVisualizacao">
+      <app-unidade-card
+        [unidade]="unidadeVisualizacao"
+        [numero]="numeroUnidadeVisualizacao"
+        [imagemUrl]="tratarImagem(unidadeVisualizacao.imagem) || ''" />
+    </div>
+  </app-modal-layout>
+}
+
+@if (turmaVisualizacao; as turma) {
+  <app-modal-layout titulo="Detalhes da turma" (closed)="turmaVisualizacao = null">
+    <app-historico-contextual modal-title-extra tipo="TURMAS"
+      [idRegistro]="turma.id" titulo="Histórico desta turma" />
+    <dl class="detalhes-campos">
+      <div><dt>Período</dt><dd>{{ formatarPeriodo(turma.periodo) || '-' }}</dd></div>
+      <div><dt>Horário de início</dt><dd>{{ formatarHorario(turma.horaInicio) }}</dd></div>
+      <div><dt>Horário de término</dt><dd>{{ formatarHorario(turma.horaFim) }}</dd></div>
+      <div><dt>Unidade</dt><dd>{{ turma.unidade.nome || '-' }}</dd></div>
+    </dl>
+  </app-modal-layout>
+}

@@ -1,0 +1,355 @@
+<section class="colaboradores-admin">
+  <h1>Colaboradores</h1>
+  <div class="conteudo">
+    <div class="acoes-colaboradores">
+      <app-barra-busca
+        placeholder="Buscar por nome, e-mail, CPF, telefone..."
+        [valor]="busca"
+        (buscar)="buscar($event)" />
+
+      <button
+        type="button"
+        class="btn-filtros"
+        (click)="abrirFiltros()">
+        <span>Filtros</span>
+        @if (quantidadeFiltrosAplicados > 0) {
+          <span class="filtros-contador">{{ quantidadeFiltrosAplicados }}</span>
+        }
+        <mat-icon>filter_list</mat-icon>
+      </button>
+
+      <button type="button" class="btn-primary btn-primary-thick" (click)="abrirCadastro()">
+        Novo colaborador
+      </button>
+    </div>
+
+    <app-tabela-layout
+      [colunas]="colunas"
+      [dados]="colaboradores"
+      [acoes]="acoesTabela"
+      [carregando]="carregandoLista"
+      [erro]="erroLista"
+      [ordenacao]="ordenacao"
+      [mensagemVazia]="mensagemVazia"
+      (acao)="executarAcao($event)"
+      (ordenar)="ordenarPor($event)"
+      (tentarNovamente)="carregarColaboradores()" />
+
+    <app-paginacao
+      [paginaAtual]="pagina"
+      [totalPaginas]="totalPaginas"
+      [totalElementos]="totalElementos"
+      [tamanho]="tamanho"
+      [carregando]="carregandoLista"
+      (paginaChange)="irParaPagina($event)"
+      (tamanhoChange)="mudarTamanhoPagina($event)" />
+  </div>
+</section>
+
+@if (colaboradorPreview; as colaborador) {
+  <app-modal-layout titulo="Detalhes do colaborador" (closed)="colaboradorPreview = null">
+    <app-historico-contextual modal-title-extra tipo="COLABORADORES" [idRegistro]="colaborador.id"
+      titulo="Histórico deste colaborador" />
+    <div class="colaborador-preview">
+      <dl class="detalhes-campos">
+        <div><dt>Nome completo</dt><dd>{{ colaborador.nomeCompleto }}</dd></div>
+        <div><dt>E-mail</dt><dd>{{ colaborador.email || '-' }}</dd></div>
+        <div><dt>CPF</dt><dd>{{ formatarCpfExibicao(colaborador.cpf) }}</dd></div>
+        <div><dt>Telefone</dt><dd>{{ formatarTelefoneExibicao(colaborador.telefone) }}</dd></div>
+        <div><dt>Endereço</dt><dd>{{ colaborador.endereco || '-' }}</dd></div>
+        <div><dt>Papel</dt><dd>{{ formatarTextoExibicao(colaborador.nomePapel) || '-' }}</dd></div>
+        <div>
+          <dt>Unidades</dt>
+          <dd>
+            @for (unidade of colaborador.unidades; track unidade.id; let ultima = $last) {
+              {{ unidade.nome }}{{ ultima ? '' : ', ' }}
+            } @empty {
+              -
+            }
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </app-modal-layout>
+}
+
+<ng-template #filtrosColaboradores>
+  <div class="filtros-colaboradores">
+    <mat-form-field appearance="outline">
+      <mat-label>Unidade</mat-label>
+      <mat-select
+        [ngModel]="filtroModalUnidade ?? 'todas'"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="selecionarUnidadeFiltro($event)">
+        <mat-option value="todas">Todas as unidades</mat-option>
+        <mat-option
+          *ngFor="let unidade of unidadesDisponiveis"
+          [value]="unidade.id">
+          {{ unidade.nome }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    @if (!somenteMonitores) {
+      <mat-form-field appearance="outline">
+        <mat-label>Papel de acesso</mat-label>
+        <mat-select
+          [ngModel]="filtroModalPapel ?? 'todos'"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="selecionarPapelFiltro($event)">
+          <mat-option value="todos">Todos os papéis</mat-option>
+          <mat-option
+            *ngFor="let papel of papeis"
+            [value]="papel.id">
+            {{ obterNomePapel(papel) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <div class="acoes-filtros-colaboradores form-acoes">
+      <button
+        type="button"
+        class="btn-filtro-secundario"
+        (click)="limparFiltros()">
+        Limpar filtros
+      </button>
+
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="aplicarFiltrosModal()">
+        Aplicar filtros
+      </button>
+    </div>
+  </div>
+</ng-template>
+
+@if (filtrosAberto) {
+  <app-modal-layout
+    titulo="Filtrar colaboradores"
+    (closed)="fecharFiltros()">
+    <ng-container *ngTemplateOutlet="filtrosColaboradores"></ng-container>
+  </app-modal-layout>
+}
+
+@if (modalAberto) {
+<app-modal-layout
+  [class.tremer]="modalTremendo"
+  [titulo]="modoEdicao ? 'Editar colaborador' : 'Cadastrar novo colaborador'"
+  (closed)="fecharModal()">
+
+  <span modal-title-extra>
+    @if (modoEdicao && colaboradorSelecionadoId) {
+      <app-historico-contextual tipo="COLABORADORES" [idRegistro]="colaboradorSelecionadoId" titulo="Histórico deste colaborador" />
+    }
+  </span>
+  <form
+    class="form-modal"
+    [formGroup]="formColaborador"
+    (ngSubmit)="salvar()">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nome completo</mat-label>
+      <input
+        matInput
+        formControlName="nomeCompleto"
+        (blur)="verificarErros()"
+        minlength="3"
+        maxlength="60" />
+    </mat-form-field>
+    <span class="error-text" *ngIf="erros['nomeCompleto']">
+      {{ erros['nomeCompleto'] }}
+    </span>
+
+    <div class="form-row">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            (blur)="verificarErros()"
+            minlength="5"
+            maxlength="100" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['email']">
+          {{ erros['email'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>CPF</mat-label>
+          <input
+            matInput
+            type="text"
+            inputmode="numeric"
+            formControlName="cpf"
+            (input)="aplicarMascaraCpf($event)"
+            (blur)="verificarErros()"
+            minlength="14"
+            maxlength="14" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['cpf']">
+          {{ erros['cpf'] }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-row form-row-endereco-valor">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Endereço</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="endereco"
+            (blur)="verificarErros()"
+            minlength="5"
+            maxlength="150" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['endereco']">
+          {{ erros['endereco'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Telefone</mat-label>
+          <input
+            matInput
+            type="text"
+            inputmode="numeric"
+            formControlName="telefone"
+            (input)="aplicarMascaraTelefone($event)"
+            (blur)="verificarErros()"
+            minlength="14"
+            maxlength="15" />
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['telefone']">
+          {{ erros['telefone'] }}
+        </span>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Papel de acesso</mat-label>
+      <mat-select
+        formControlName="idPapel"
+        [canSelectNullableOptions]="false"
+        (selectionChange)="verificarErros()"
+        (blur)="verificarErros()">
+        <mat-option
+          *ngFor="let papel of papeis"
+          [value]="papel.id">
+          {{ obterNomePapel(papel) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <span class="error-text" *ngIf="erros['idPapel']">
+      {{ erros['idPapel'] }}
+    </span>
+
+    <div class="form-group" *ngIf="!papelSelecionadoAdministrador">
+      <label class="unidades-label">Unidades vinculadas</label>
+      <div class="unidades-box">
+        <div *ngIf="unidadesDisponiveis.length === 0" class="sem-unidades">
+          Nenhuma unidade disponível
+        </div>
+
+        <label *ngFor="let u of unidadesDisponiveis" class="unidade-item">
+          <input type="checkbox" [checked]="isUnidadeSelecionada(u.id)" (change)="onUnidadeToggle(u.id, $event)" />
+          <span>{{ u.nome }}</span>
+        </label>
+      </div>
+      <span class="error-text" *ngIf="erros['idsUnidades']">
+        {{ erros['idsUnidades'] }}
+      </span>
+    </div>
+
+    @if (!modoEdicao) {
+    <div class="form-row">
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Senha</mat-label>
+          <input
+            matInput
+            [type]="mostrarSenha ? 'text' : 'password'"
+            formControlName="senha"
+            (input)="verificarErros()"
+            (blur)="verificarErros()"
+            maxlength="50" />
+          <button
+            matSuffix
+            type="button"
+            class="btn-icone-senha"
+            tabindex="-1"
+            (click)="alternarVisibilidadeSenha('senha')">
+            <span class="material-symbols-outlined">
+              {{ mostrarSenha ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['senha']">
+          {{ erros['senha'] }}
+        </span>
+      </div>
+
+      <div>
+        <mat-form-field appearance="outline">
+          <mat-label>Confirmar senha</mat-label>
+          <input
+            matInput
+            [type]="mostrarConfirmarSenha ? 'text' : 'password'"
+            formControlName="confirmarSenha"
+            (input)="verificarErros()"
+            (blur)="verificarErros()" />
+          <button
+            matSuffix
+            type="button"
+            class="btn-icone-senha"
+            tabindex="-1"
+            (click)="alternarVisibilidadeSenha('confirmarSenha')">
+            <span class="material-symbols-outlined">
+              {{ mostrarConfirmarSenha ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </mat-form-field>
+        <span class="error-text" *ngIf="erros['confirmarSenha']">
+          {{ erros['confirmarSenha'] }}
+        </span>
+      </div>
+    </div>
+    <span class="hint-text">
+      Mínimo de 6 caracteres, 1 letra maiúscula e 1 número
+    </span>
+    }
+
+    <div class="acoes-modal form-acoes">
+      <button
+        type="button"
+        class="btn-cancelar"
+        [disabled]="isLoading"
+        (click)="fecharModal()">
+        Cancelar
+      </button>
+
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading || (modoEdicao && !temAlteracoes)">
+        <span
+          *ngIf="isLoading"
+          class="spinner"
+          aria-hidden="true">
+        </span>
+        <span>
+          {{ isLoading ? 'Salvando...' : 'Salvar' }}
+        </span>
+      </button>
+    </div>
+  </form>
+</app-modal-layout>
+}

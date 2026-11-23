@@ -1,0 +1,73 @@
+<section class="dashboard-home" aria-labelledby="dashboard-home-title">
+  <div class="dashboard-home__content">
+    <div class="dashboard-home__intro">
+      <p class="dashboard-home__greeting">{{ greeting() }}</p>
+      <h1 id="dashboard-home-title">{{ userName() }}</h1>
+      <p class="dashboard-home__description">
+        Escolha uma opção no menu de navegação ou selecione abaixo para iniciarmos.
+      </p>
+    </div>
+
+    <nav class="grid-opcoes" aria-label="Atalhos do dashboard">
+      @if (podeAcessar('diario')) {
+        <a class="card-opcao" routerLink="/dashboard/diario" routerLinkActive="ativo">
+          <span class="material-symbols-outlined">assignment</span>
+          <span class="texto-link">Diário de turma</span>
+        </a>
+      }
+
+      @if (podeAcessar('usuarios')) {
+        <a class="card-opcao" routerLink="/dashboard/usuarios" routerLinkActive="ativo">
+          <span class="material-symbols-outlined">sentiment_excited</span>
+          <span class="texto-link">Usuários</span>
+        </a>
+      }
+
+      @if (podeAcessar('colaboradores')) {
+        <a class="card-opcao" routerLink="/dashboard/colaboradores" routerLinkActive="ativo">
+          <span class="material-symbols-outlined">support_agent</span>
+          <span class="texto-link">Colaboradores</span>
+        </a>
+      }
+
+      @if (podeAcessar('unidades-turmas')) {
+        <a class="card-opcao" routerLink="/dashboard/unidades-turmas" routerLinkActive="ativo">
+          <span class="material-symbols-outlined">family_group</span>
+          <span class="texto-link">Unidades e turmas</span>
+        </a>
+      }
+
+      @if (podeAcessar('conteudo-publico')) {
+        <a class="card-opcao" routerLink="/dashboard/conteudo-publico" routerLinkActive="ativo">
+          <span class="material-symbols-outlined">captive_portal</span>
+          <span class="texto-link">Conteúdo público</span>
+        </a>
+      }
+
+      @if (podeAcessar('historico-alteracoes')) {
+        <a class="card-opcao" routerLink="/dashboard/historico-alteracoes" routerLinkActive="ativo">
+          <span class="material-symbols-outlined icone-historico"
+              [attr.title]="(temNovidadesHistorico | async) ? 'Histórico de alterações: novo' : 'Histórico de alterações'">
+              history
+              @if (temNovidadesHistorico | async) {
+                <span class="novidade-historico" role="img" aria-label="Novas alterações"></span>
+              }
+            </span>
+          <span class="texto-link">Histórico de alterações</span>
+        </a>
+      }
+    </nav>
+  </div>
+
+  <figure class="dashboard-home__art">
+    <img
+      src="/images/criancas-brincando.svg"
+      alt="Crianças brincando com carrinhos e blocos"
+    >
+    <figcaption>
+      <a href="https://storyset.com/home" target="_blank" rel="noopener noreferrer">
+        Ilustração por Storyset
+      </a>
+    </figcaption>
+  </figure>
+</section>

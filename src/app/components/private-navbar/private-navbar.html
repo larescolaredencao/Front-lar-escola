@@ -1,0 +1,105 @@
+<div appBloquearScroll class="navbar-overlay" *ngIf="menuVisivel" (click)="fecharMenu()"></div>
+
+<nav class="navbar" [ngClass]="{'expandido': menuVisivel}">
+  <div class="navbar-header" (click)="abrirMenu()">
+    <button class="btn-menu" (click)="$event.stopPropagation(); alternarMenu()" aria-label="Menu">
+      <span class="material-symbols-outlined">
+        {{ menuVisivel ? 'close' : 'menu' }}
+      </span>
+    </button>
+
+    <div class="logo-container">
+      <a routerLink="/dashboard" (click)="$event.stopPropagation(); fecharMenu()">
+        <img src="/images/logo_branca_texto.png" alt="Logo Lar Escola Redenção">
+      </a>
+    </div>
+
+    <div class="nav-action">
+      <button
+        type="button"
+        class="btn-avatar"
+        (click)="$event.stopPropagation(); alternarMenuUsuario()"
+        [attr.aria-expanded]="menuUsuarioAberto"
+        aria-label="Menu do usuário">
+        {{ iniciaisUsuario() || '...' }}
+      </button>
+
+      <div class="menu-usuario" *ngIf="menuUsuarioAberto" (click)="$event.stopPropagation()">
+        <button type="button" class="menu-usuario-item" (click)="irParaPerfil()">
+          <span class="material-symbols-outlined">person</span>
+          <span>Meu perfil</span>
+        </button>
+        <button type="button" class="menu-usuario-item" (click)="abrirAlteracaoSenha()">
+          <span class="material-symbols-outlined" aria-hidden="true">key</span>
+          <span>Alterar senha</span>
+        </button>
+        <button type="button" class="menu-usuario-item menu-usuario-item--sair" (click)="sair()">
+          <span class="material-symbols-outlined">logout</span>
+          <span>Sair</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel de Gestão (Visível ao clicar no menu) -->
+  <div class="dropdown-panel" *ngIf="menuVisivel">
+    <div class="painel-content">
+      <h3 class="painel-titulo">CENTRAL DE GESTÃO</h3>
+      <div class="grid-opcoes">
+        @if (podeAcessar('diario')) {
+          <a class="card-opcao" routerLink="/dashboard/diario" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined">assignment</span>
+            <span class="texto-link">Diário de turma</span>
+          </a>
+        }
+
+        @if (podeAcessar('usuarios')) {
+          <a class="card-opcao" routerLink="/dashboard/usuarios" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined">sentiment_excited</span>
+            <span class="texto-link">Usuários</span>
+          </a>
+        }
+
+        @if (podeAcessar('colaboradores')) {
+          <a class="card-opcao" routerLink="/dashboard/colaboradores" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined">support_agent</span>
+            <span class="texto-link">Colaboradores</span>
+          </a>
+        }
+
+        @if (podeAcessar('unidades-turmas')) {
+          <a class="card-opcao" routerLink="/dashboard/unidades-turmas" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined">family_group</span>
+            <span class="texto-link">Unidades e turmas</span>
+          </a>
+        }
+
+        @if (podeAcessar('conteudo-publico')) {
+          <a class="card-opcao" routerLink="/dashboard/conteudo-publico" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined">captive_portal</span>
+            <span class="texto-link">Conteúdo público</span>
+          </a>
+        }
+
+        @if (podeAcessar('historico-alteracoes')) {
+          <a class="card-opcao" routerLink="/dashboard/historico-alteracoes" routerLinkActive="ativo" (click)="fecharMenu()">
+            <span class="material-symbols-outlined icone-historico"
+              [attr.title]="(temNovidadesHistorico | async) ? 'Histórico de alterações: novo' : 'Histórico de alterações'">
+              history
+              @if (temNovidadesHistorico | async) {
+                <span class="novidade-historico" role="img" aria-label="Novas alterações"></span>
+              }
+            </span>
+            <span class="texto-link">Histórico de alterações</span>
+          </a>
+        }
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="navbar-spacer"></div>
+
+@if (modalSenhaAberto) {
+  <app-alterar-senha (closed)="modalSenhaAberto = false"></app-alterar-senha>
+}

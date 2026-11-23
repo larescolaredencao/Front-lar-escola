@@ -1,0 +1,220 @@
+.perfil-page {
+  min-height: calc(100vh - 130px);
+  padding: 0px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--branco);
+}
+
+.perfil-page h1 {
+  font-family: var(--fonte-titulo);
+  margin-bottom: 20px;
+}
+
+.conteudo {
+  width: min(100%, 640px);
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.cartao {
+  background-color: var(--branco);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--sombra-padrao);
+}
+
+.cartao-cabecalho {
+  padding: 18px 24px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #ddd;
+}
+
+.cartao-cabecalho h2 {
+  font-family: var(--fonte-titulo);
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--preto);
+}
+
+.cartao-cabecalho .hint-text {
+  display: block;
+  margin: 4px 0 0;
+  color: rgba(0, 0, 0, 0.6);
+  font-family: var(--fonte-texto);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cartao-corpo {
+  padding: 20px 24px;
+}
+
+.hint-text .link-colaboradores {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.hint-text .link-colaboradores:hover,
+.hint-text .link-colaboradores:focus-visible {
+  color: var(--primary-color);
+}
+
+.somente-leitura {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.somente-leitura > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rotulo {
+  color: var(--input-color);
+  font-family: var(--fonte-texto);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.valor {
+  color: var(--preto);
+  font-family: var(--fonte-texto);
+  font-size: 0.95rem;
+}
+
+.form-perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-perfil .mat-mdc-form-field {
+  width: 100%;
+}
+
+.acoes-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 24px;
+  margin-top: 4px;
+}
+
+.acoes-form .acoes-edicao-perfil {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  width: auto;
+  max-width: 100%;
+}
+
+.acoes-edicao-perfil > button {
+  flex: 0 0 auto;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.link-alterar-senha {
+  flex: 0 0 auto;
+  min-height: 48px;
+  margin-right: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-family: var(--fonte-texto);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .acoes-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acoes-form .acoes-edicao-perfil {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .acoes-edicao-perfil > button,
+  .link-alterar-senha {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .link-alterar-senha {
+    margin-right: 0;
+    text-align: center;
+  }
+}
+
+.estado-info,
+.estado-erro {
+  color: var(--input-color);
+  font-family: var(--fonte-texto);
+  display: grid;
+  gap: 16px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: var(--branco);
+  border-radius: 50%;
+  display: inline-block;
+  animation: girar 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.form-perfil {
+  --perfil-campo-desabilitado-bg: #eeeeee;
+}
+
+.form-perfil ::ng-deep .mat-form-field-disabled .mat-mdc-text-field-wrapper {
+  background-color: var(--perfil-campo-desabilitado-bg) !important;
+}
+
+.form-perfil ::ng-deep .mat-form-field-disabled .mat-mdc-input-element {
+  color: var(--input-color) !important;
+  -webkit-text-fill-color: var(--input-color) !important;
+}
+
+.form-perfil ::ng-deep .mat-form-field-disabled .mat-mdc-form-field-infix {
+  z-index: 1;
+}
+
+.form-perfil ::ng-deep .mat-form-field-disabled .mat-mdc-floating-label {
+  padding: 0 4px;
+  background-color: var(--perfil-campo-desabilitado-bg) !important;
+  color: var(--input-color) !important;
+  z-index: 2;
+}
+
+.form-perfil ::ng-deep .mat-form-field-disabled .mdc-notched-outline__notch {
+  background-color: transparent !important;
+}

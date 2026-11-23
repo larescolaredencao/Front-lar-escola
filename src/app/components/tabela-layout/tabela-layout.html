@@ -1,0 +1,279 @@
+<div class="tabela-container">
+
+  @if (erro) {
+
+  <div class="tabela-erro">
+    <p>{{ mensagemErro }}</p>
+    <button type="button" class="botao-tentar-novamente" (click)="tentarNovamente.emit()">
+      Tentar novamente
+    </button>
+  </div>
+
+  } @else if (carregando && dados.length === 0) {
+
+  <div class="tabela-carregando">
+    <span class="spinner" aria-hidden="true"></span>
+  </div>
+
+  } @else if (dados.length > 0) {
+
+  <div class="tabela-wrapper" [class.tabela-wrapper--carregando]="carregando">
+
+    <table class="tabela">
+
+      <thead>
+        <tr>
+          @for (coluna of colunas; track coluna.chave) {
+          <th
+            [class.coluna-ordenavel]="coluna.ordenavel"
+            [attr.aria-sort]="coluna.ordenavel ? (direcaoOrdenacao(coluna) === 'asc' ? 'ascending' : direcaoOrdenacao(coluna) === 'desc' ? 'descending' : 'none') : null"
+            (click)="ordenarPor(coluna)"
+          >
+            @if (coluna.ordenavel) {
+              <button type="button" class="botao-ordenacao" [disabled]="carregando"
+                [attr.aria-label]="'Ordenar por ' + coluna.titulo + (direcaoOrdenacao(coluna) === 'asc' ? ' em ordem decrescente' : ' em ordem crescente')"
+                (click)="$event.stopPropagation(); ordenarPor(coluna)">
+                {{ coluna.titulo }}
+              @if (direcaoOrdenacao(coluna) === 'asc') {
+                <span class="icone-ordenacao">▲</span>
+              } @else if (direcaoOrdenacao(coluna) === 'desc') {
+                <span class="icone-ordenacao">▼</span>
+              } @else {
+                <span class="icone-ordenacao icone-ordenacao--inativo">⇅</span>
+              }
+              </button>
+            } @else {
+              {{ coluna.titulo }}
+            }
+          </th>
+          }
+          @if (acoes.length > 0) {
+          <th class="coluna-acoes"></th>
+          }
+        </tr>
+      </thead>
+
+      <tbody>
+
+        @for (linha of dados; track $index) {
+        <tr class="linha" [class.expandida]="linhaExpandida === $index">
+
+          <!-- ================================================= -->
+          <!-- CABEÇALHO EXCLUSIVO PARA O MOBILE -->
+          <!-- ================================================= -->
+
+          <td class="header-mobile" (click)="toggleLinha($index)">
+            @if (colunaPrincipal.tipo === 'matricula-status') {
+              <span class="titulo-mobile titulo-mobile--status">
+                <span class="badge-status" [ngClass]="'status-matricula-' + obterClasseStatusMatricula(linha[colunaPrincipal.chave])">
+                  {{ obterValorPrincipal(linha) }}
+                </span>
+              </span>
+            } @else {
+              <span class="titulo-mobile">
+                @if (colunaPrincipal.link) {
+                  <a class="tabela-link" [routerLink]="colunaPrincipal.link(linha)"
+                    [queryParams]="colunaPrincipal.parametrosLink?.(linha)" (click)="$event.stopPropagation()">
+                    {{ obterValorPrincipal(linha) }}
+                  </a>
+                } @else {
+                  {{ obterValorPrincipal(linha) }}
+                }
+              </span>
+            }
+            @if (obterEtiquetaPrincipal(linha); as etiqueta) {
+              @if (etiqueta === 'kid_star') {
+                <img class="etiqueta-icone" src="/icons/kid-star-filled.svg" alt="Contato principal" />
+              } @else {
+                <span class="etiqueta-celula">{{ etiqueta }}</span>
+              }
+            }
+            <mat-icon>
+              {{
+              linhaExpandida === $index
+              ? 'expand_less'
+              : 'expand_more'
+              }}
+            </mat-icon>
+          </td>
+
+
+          <!-- ================================================= -->
+          <!-- COLUNAS -->
+          <!-- ================================================= -->
+
+          @for (coluna of colunas; track coluna.chave) {
+
+  <td
+    class="celula-dado"
+    [attr.data-label]="coluna.titulo"
+  >
+
+    <span class="valor-celula">
+
+      <!-- ============================= -->
+      <!-- IMAGEM -->
+      <!-- ============================= -->
+
+      @if (coluna.tipo === 'imagem') {
+
+        @if (obterUrlImagem(linha[coluna.chave])) {
+
+          <img
+            class="tabela-imagem"
+            [src]="obterUrlImagem(linha[coluna.chave])"
+            [alt]="coluna.titulo"
+          />
+
+        } @else {
+
+          <span class="tabela-imagem-vazia">
+            -
+          </span>
+
+        }
+
+      }
+
+      <!-- ============================= -->
+      <!-- DOCUMENTO -->
+      <!-- ============================= -->
+
+      @else if (coluna.tipo === 'documento') {
+
+        @if (obterUrlDocumento(linha[coluna.chave])) {
+
+          <a
+            class="tabela-documento"
+            [class.tabela-documento-indisponivel]="documentoIndisponivel(linha, coluna)"
+            [href]="obterUrlDocumento(linha[coluna.chave])"
+            target="_blank"
+            rel="noopener noreferrer"
+            [title]="documentoTitle(coluna)"
+            (click)="clicarDocumento(linha, coluna, obterUrlDocumento(linha[coluna.chave])!, $event)"
+          >
+            <span>{{ documentoLabel(coluna) }}</span>
+          </a>
+
+        } @else {
+
+          <span class="tabela-documento-vazio">
+            -
+          </span>
+
+        }
+
+      }
+
+      <!-- ============================= -->
+      <!-- STATUS -->
+      <!-- ============================= -->
+
+      @else if (coluna.tipo === 'status') {
+
+        <span
+          class="badge-status"
+          [class.ativo]="linha[coluna.chave] === true"
+          [class.inativo]="linha[coluna.chave] === false"
+        >
+          {{ obterStatus(linha[coluna.chave]) }}
+        </span>
+
+      }
+
+      @else if (coluna.tipo === 'matricula-status') {
+
+        @if (linha[coluna.chave] === 'INATIVO') {
+          <span class="badge-status status-matricula-inativo">TRANSFERIDA</span>
+        } @else {
+          <span class="badge-status" [class]="'badge-status status-matricula-' + obterClasseStatusMatricula(linha[coluna.chave])">
+            {{ obterValor(linha, coluna) }}
+          </span>
+        }
+
+      }
+
+      <!-- ============================= -->
+      <!-- TELEFONE -->
+      <!-- ============================= -->
+
+      @else if (coluna.tipo === 'telefone') {
+
+        @if (obterHrefTelefone(linha[coluna.chave])) {
+          <a class="tabela-telefone" [href]="obterHrefTelefone(linha[coluna.chave])">
+            {{ obterValor(linha, coluna) }}
+          </a>
+        } @else {
+          {{ obterValor(linha, coluna) }}
+        }
+
+      }
+
+      <!-- ============================= -->
+      <!-- TEXTO -->
+      <!-- ============================= -->
+
+      @else {
+
+        @if (coluna.link) {
+          <a class="tabela-link" [routerLink]="coluna.link(linha)" [queryParams]="coluna.parametrosLink?.(linha)">
+            {{ obterValor(linha, coluna) }}
+          </a>
+        } @else {
+          {{ obterValor(linha, coluna) }}
+        }
+
+        @if (obterEtiqueta(linha, coluna); as etiqueta) {
+          @if (etiqueta === 'kid_star') {
+            <img class="etiqueta-icone" src="/icons/kid-star-filled.svg" alt="Contato principal" />
+          } @else {
+            <span class="etiqueta-celula">{{ etiqueta }}</span>
+          }
+        }
+
+      }
+
+    </span>
+
+  </td>
+
+}
+
+
+          <!-- ================================================= -->
+          <!-- AÇÕES -->
+          <!-- ================================================= -->
+
+          @if (acoes.length > 0) {
+          <td class="coluna-acoes" data-label="Ações">
+            <div class="acoes">
+              @for (acao of acoesVisiveis(linha); track acao.acao) {
+              <button type="button" class="botao-acao" [class.botao-excluir]="acao.acao === 'excluir'"
+                [title]="acao.tooltip" (click)="executarAcao(acao, linha)">
+                <mat-icon class="material-symbols-outlined">
+                  {{ acao.icone }}
+                </mat-icon>
+              </button>
+              }
+
+            </div>
+          </td>
+          }
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  } @else {
+
+  <!-- ======================================================= -->
+  <!-- TABELA VAZIA -->
+  <!-- ======================================================= -->
+
+  <div class="tabela-vazia">
+    <app-estado-vazio [mensagem]="mensagemVazia"></app-estado-vazio>
+  </div>
+
+  }
+</div>
